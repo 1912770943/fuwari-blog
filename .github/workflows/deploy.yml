@@ -40,12 +40,11 @@ jobs:
       - name: Configure SSH
         env:
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-          SERVER_HOST_KEY: ${{ secrets.SERVER_HOST_KEY }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "$SERVER_HOST_KEY" > ~/.ssh/known_hosts
+          printf '%s\n' '[157.254.191.32]:30414 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEYjFfJxi/wF9/udL9FMnrPB9CNK+0fSxfAU6rJeyN2A' > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
       - name: Upload and activate
