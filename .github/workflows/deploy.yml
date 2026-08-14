@@ -1,0 +1,62 @@
+name: Build and deploy blog
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: fuwari-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.14.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build site
+        run: pnpm build
+
+      - name: Package site
+        run: tar -czf fuwari-site.tar.gz -C dist .
+
+      - name: Configure SSH
+        env:
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_HOST_KEY: ${{ secrets.SERVER_HOST_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SERVER_HOST_KEY" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload and activate
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          scp -i ~/.ssh/id_ed25519 -P "$SERVER_PORT" fuwari-site.tar.gz "$SERVER_USER@$SERVER_HOST:/tmp/fuwari-site.tar.gz"
+          ssh -i ~/.ssh/id_ed25519 -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" \
+            'set -eu; rm -rf /srv/fuwari.new; mkdir -p /srv/fuwari.new; tar -xzf /tmp/fuwari-site.tar.gz -C /srv/fuwari.new; rm -f /tmp/fuwari-site.tar.gz; rm -rf /srv/fuwari.old; if [ -d /srv/fuwari ]; then mv /srv/fuwari /srv/fuwari.old; fi; mv /srv/fuwari.new /srv/fuwari'
+
+      - name: Verify public site
+        run: curl --noproxy '*' --fail --show-error --retry 5 --retry-delay 2 --max-time 20 http://157.254.191.32:15713/

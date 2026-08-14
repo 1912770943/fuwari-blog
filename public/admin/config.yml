@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://unpkg.com/@sveltia/cms/schema/sveltia-cms.json
+
+backend:
+  name: github
+  repo: 1912770943/fuwari-blog
+  branch: main
+
+locale: zh_Hans
+media_folder: public/uploads
+public_folder: /uploads
+
+collections:
+  - name: posts
+    label: 博客文章
+    label_singular: 文章
+    folder: src/content/posts
+    create: true
+    extension: md
+    format: frontmatter
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    summary: "{{title}} — {{published}}"
+    sortable_fields: [published, title]
+    view_filters:
+      - label: 已发布
+        field: draft
+        pattern: false
+      - label: 草稿
+        field: draft
+        pattern: true
+    fields:
+      - { label: 标题, name: title, widget: string }
+      - { label: 发布日期, name: published, widget: datetime, type: date, format: YYYY-MM-DD }
+      - { label: 更新日期, name: updated, widget: datetime, type: date, format: YYYY-MM-DD, required: false }
+      - { label: 摘要, name: description, widget: text, required: false }
+      - { label: 封面图片, name: image, widget: image, required: false }
+      - { label: 标签, name: tags, widget: list, required: false, default: [] }
+      - { label: 分类, name: category, widget: string, required: false }
+      - { label: 保存为草稿, name: draft, widget: boolean, default: false }
+      - { label: 语言, name: lang, widget: hidden, default: zh_CN }
+      - { label: 正文, name: body, widget: richtext }
