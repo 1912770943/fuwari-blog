@@ -55,7 +55,6 @@ jobs:
         run: |
           scp -i ~/.ssh/id_ed25519 -P "$SERVER_PORT" fuwari-site.tar.gz "$SERVER_USER@$SERVER_HOST:/tmp/fuwari-site.tar.gz"
           ssh -i ~/.ssh/id_ed25519 -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" \
-            'set -eu; rm -rf /srv/fuwari.new; mkdir -p /srv/fuwari.new; tar -xzf /tmp/fuwari-site.tar.gz -C /srv/fuwari.new; rm -f /tmp/fuwari-site.tar.gz; rm -rf /srv/fuwari.old; if [ -d /srv/fuwari ]; then mv /srv/fuwari /srv/fuwari.old; fi; mv /srv/fuwari.new /srv/fuwari'
-
+           'set -eu; find /srv/fuwari -mindepth 1 -maxdepth 1 -exec rm -rf {} +; tar -xzf /tmp/fuwari-site.tar.gz -C /srv/fuwari; rm -f /tmp/fuwari-site.tar.gz'
       - name: Verify public site
         run: curl --noproxy '*' --fail --show-error --retry 5 --retry-delay 2 --max-time 20 http://157.254.191.32:15713/
